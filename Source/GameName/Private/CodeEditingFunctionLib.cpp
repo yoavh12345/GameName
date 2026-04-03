@@ -73,6 +73,10 @@ FCodeAction UCodeEditingFunctionLib::GetActionFromExpression(FString Expression,
 		FString ValueStr = Expression.RightChop(FString("transform.z").Len() + 1);
 		UE_LOG(LogTemp, Warning, TEXT("Value Str: %s"), *ValueStr);
 		float Value = FCString::Atof(*ValueStr);
+		if (Value == 0 && FCString::Atof(*(ValueStr.RightChop(1))) != 0)
+		{
+			Value = FCString::Atof(*ValueStr.RightChop(1));
+		}
 		retAction.ActedOnField = EActedOnField::TransformZ;
 		retAction.ExpressionType = GetExpressionTypeFromExpression(Expression, Errs);
 		retAction.Value = Value;
