@@ -57,7 +57,7 @@ void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(UInputComponent* Player
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 		
 		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ATP_ThirdPersonCharacter::DoJumpStart);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		// Moving
@@ -123,8 +123,18 @@ void ATP_ThirdPersonCharacter::DoLook(float Yaw, float Pitch)
 
 void ATP_ThirdPersonCharacter::DoJumpStart()
 {
-	// signal the character to jump
-	Jump();
+	if (OverrideJumpToTeleport && !GetMovementComponent()->IsFalling())
+	{
+		FVector Dest = GetActorLocation();
+		Dest.Z = TeleportZHeight;
+		TeleportTo(Dest, GetActorRotation());
+		UE_LOG(LogTemp, Warning, TEXT("Teleported to Z: %f"), TeleportZHeight);
+	}
+	else
+	{
+		// signal the character to jump
+		Jump();
+	}
 }
 
 void ATP_ThirdPersonCharacter::DoJumpEnd()

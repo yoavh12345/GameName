@@ -54,6 +54,12 @@ public:
 	/** Constructor */
 	ATP_ThirdPersonCharacter();	
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Code Editing")
+	bool OverrideJumpToTeleport = false;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Code Editing")
+	float TeleportZHeight = 0;
+
 protected:
 
 	/** Initialize input action bindings */

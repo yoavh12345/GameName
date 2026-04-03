@@ -2,10 +2,34 @@
 
 
 #include "CodeEditingFunctionLib.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameName/TP_ThirdPerson/TP_ThirdPersonCharacter.h"
 
-void UCodeEditingFunctionLib::HandleCodeChange(FString NewCodeLine, TSubclassOf<AActor> Context, ECodeEvent CE)
+FCodeParseResult UCodeEditingFunctionLib::HandleCodeChange(FString NewCodeLine, TSubclassOf<AActor> Context, ECodeEvent CE, AActor* WorldContextObject)
 {
+	FCodeParseResult Result;
+	TArray<FString> Expressions = GetExpressionsFromCode(NewCodeLine, Result.Errors);
+	TArray<FCodeAction> Actions;
+	for (FString Exp : Expressions)
+	{
+		Actions.Add(GetActionFromExpression(Exp, Result.Errors));
+	}
+	if (Result.Errors.Num() != 0)
+	{
+		return Result;
+	}
+
+	for (auto Action : Actions)
+	{
+		if (!doAction(Action, Context, WorldContextObject, CE))
+		{
+			Result.Errors.Add(ECodeSyntaxErrorType::InvalidAction);
+			Result.bSuccess = false;
+		}
+	}
+
+	return Result;
 }
 
 FCodeLineData UCodeEditingFunctionLib::ParseCodeLineData(FString OriginalCodeLine, TSubclassOf<AActor> Context, ECodeEvent CE)
@@ -39,4 +63,82 @@ FString UCodeEditingFunctionLib::GetClassNameFromContext(TSubclassOf<AActor> Con
 		return FString();
 	}
 
+}
+
+FCodeAction UCodeEditingFunctionLib::GetActionFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errs)
+{
+	FCodeAction retAction;
+	if (Expression.StartsWith("transform.z"))
+	{
+		FString ValueStr = Expression.RightChop(FString("transform.z").Len() + 1);
+		UE_LOG(LogTemp, Warning, TEXT("Value Str: %s"), *ValueStr);
+		float Value = FCString::Atof(*ValueStr);
+		retAction.ActedOnField = EActedOnField::TransformZ;
+		retAction.ExpressionType = GetExpressionTypeFromExpression(Expression, Errs);
+		retAction.Value = Value;
+	}
+	return retAction;
+}
+
+TArray<FString> UCodeEditingFunctionLib::GetExpressionsFromCode(FString Code, TArray<ECodeSyntaxErrorType>& Errs)
+{
+	Code = Code.Replace(TEXT(" "), TEXT("")); // Remove spaces for easier parsing
+	Code = Code.ToLower();
+	TArray<FString> Expressions;
+	Code.ParseIntoArray(Expressions, TEXT("\n"));
+	return Expressions;
+}
+
+EExpressionType UCodeEditingFunctionLib::GetExpressionTypeFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errs)
+{
+		EExpressionType ret = Expression.Find(TEXT("+=")) != INDEX_NONE ? EExpressionType::Addition :
+		Expression.Find(TEXT("-=")) != INDEX_NONE ? EExpressionType::Subtraction :
+		Expression.Find(TEXT("=")) != INDEX_NONE ? EExpressionType::Set :
+		EExpressionType::Invalid;
+		if (ret == EExpressionType::Invalid)
+		{
+			Errs.Add(ECodeSyntaxErrorType::InvalidExpression);
+		}
+		return ret;
+}
+
+bool UCodeEditingFunctionLib::doAction(FCodeAction Action, TSubclassOf<AActor> Context, AActor* WorldContextObject, ECodeEvent CE)
+{
+	TArray<AActor*, FDefaultAllocator> OutObjects;
+	UGameplayStatics::GetAllActorsOfClass(WorldContextObject, Context, OutObjects);
+	if (OutObjects.Num() < 1)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No Instances found of object!"));
+		return true;
+	}
+	for (auto Actor : OutObjects)
+	{
+		//player actions:
+		if (Context->IsChildOf(ATP_ThirdPersonCharacter::StaticClass()))
+		{
+			ATP_ThirdPersonCharacter* CastedActor = Cast<ATP_ThirdPersonCharacter>(Actor);
+			if (CE == ECodeEvent::OnJump)
+			{
+				if (Action.ActedOnField == EActedOnField::TransformZ)
+				{
+					if (Action.ExpressionType == EExpressionType::Set)
+					{
+						CastedActor->TeleportZHeight = Action.Value;
+						CastedActor->OverrideJumpToTeleport = true;
+					}
+					else if (Action.ExpressionType == EExpressionType::Addition)
+					{
+						CastedActor->OverrideJumpToTeleport = false;
+						CastedActor->GetCharacterMovement()->JumpZVelocity = Action.Value;
+						UE_LOG(LogTemp, Warning, TEXT("Set JumpZVelocity for character: %s to %f"), *CastedActor->GetName(), Action.Value)
+					}
+					else if (Action.ExpressionType == EExpressionType::Subtraction)
+					{
+						return false;
+					}
+				}
+			}
+		}
+	}
+	return true;
 }
