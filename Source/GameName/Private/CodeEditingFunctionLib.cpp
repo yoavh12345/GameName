@@ -6,7 +6,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameName/TP_ThirdPerson/TP_ThirdPersonCharacter.h"
 
-FCodeParseResult UCodeEditingFunctionLib::HandleCodeChange(FString NewCodeLine, TSubclassOf<AActor> Context, ECodeEvent CE, AActor* WorldContextObject)
+FCodeParseResult UCodeEditingFunctionLib::HandleCodeChange(FString NewCodeLine, TSubclassOf<AActor> Context, ECodeEvent CE, UObject* WorldContextObject)
 {
 	FCodeParseResult Result;
 	TArray<FString> Expressions = GetExpressionsFromCode(NewCodeLine, Result.Errors);
@@ -106,7 +106,7 @@ EExpressionType UCodeEditingFunctionLib::GetExpressionTypeFromExpression(FString
 		return ret;
 }
 
-bool UCodeEditingFunctionLib::doAction(FCodeAction Action, TSubclassOf<AActor> Context, AActor* WorldContextObject, ECodeEvent CE)
+bool UCodeEditingFunctionLib::doAction(FCodeAction Action, TSubclassOf<AActor> Context, UObject* WorldContextObject, ECodeEvent CE)
 {
 	TArray<AActor*, FDefaultAllocator> OutObjects;
 	UGameplayStatics::GetAllActorsOfClass(WorldContextObject, Context, OutObjects);

@@ -92,7 +92,7 @@ class GAMENAME_API UCodeEditingFunctionLib : public UBlueprintFunctionLibrary
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Code Editing")
-	static FCodeParseResult HandleCodeChange(FString NewCodeLine, TSubclassOf<AActor> Context, ECodeEvent CE, AActor* WorldContextObject);
+	static FCodeParseResult HandleCodeChange(FString NewCodeLine, TSubclassOf<AActor> Context, ECodeEvent CE, UObject* WorldContextObject);
 
 	UFUNCTION(BlueprintCallable, Category = "Code Editing")
 	static FCodeLineData ParseCodeLineData(FString OriginalCodeLine, TSubclassOf<AActor> Context, ECodeEvent CE);
@@ -106,5 +106,5 @@ private:
 
 	static EExpressionType GetExpressionTypeFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errs);
 	
-	static bool doAction(FCodeAction Action, TSubclassOf<AActor> Context, AActor* WorldContextObject, ECodeEvent CE);
+	static bool doAction(FCodeAction Action, TSubclassOf<AActor> Context, UObject* WorldContextObject, ECodeEvent CE);
 };
