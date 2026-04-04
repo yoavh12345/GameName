@@ -127,18 +127,19 @@ bool UCodeEditingFunctionLib::doAction(FCodeAction Action, TSubclassOf<AActor> C
 				{
 					if (Action.ExpressionType == EExpressionType::Set)
 					{
-						CastedActor->TeleportZHeight = Action.Value;
-						CastedActor->OverrideJumpToTeleport = true;
+						CastedActor->JumpZValue = Action.Value;
+						CastedActor->JumpType = EJumpType::Set;
 					}
 					else if (Action.ExpressionType == EExpressionType::Addition)
 					{
-						CastedActor->OverrideJumpToTeleport = false;
+						CastedActor->JumpType = EJumpType::Jump;
 						CastedActor->GetCharacterMovement()->JumpZVelocity = Action.Value;
 						UE_LOG(LogTemp, Warning, TEXT("Set JumpZVelocity for character: %s to %f"), *CastedActor->GetName(), Action.Value)
 					}
 					else if (Action.ExpressionType == EExpressionType::Subtraction)
 					{
-						return false;
+						CastedActor->JumpZValue = Action.Value;
+						CastedActor->JumpType = EJumpType::Down;
 					}
 				}
 			}

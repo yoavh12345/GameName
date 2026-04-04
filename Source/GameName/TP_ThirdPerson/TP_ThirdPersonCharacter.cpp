@@ -123,18 +123,34 @@ void ATP_ThirdPersonCharacter::DoLook(float Yaw, float Pitch)
 
 void ATP_ThirdPersonCharacter::DoJumpStart()
 {
-	if (OverrideJumpToTeleport && !GetMovementComponent()->IsFalling())
+	if (JumpType == EJumpType::Down)
 	{
-		FVector Dest = GetActorLocation();
-		Dest.Z = TeleportZHeight;
-		TeleportTo(Dest, GetActorRotation());
-		UE_LOG(LogTemp, Warning, TEXT("Teleported to Z: %f"), TeleportZHeight);
+		LaunchCharacter(FVector(0, 0, -JumpZValue * 5), false, true);
+		UE_LOG(LogTemp, Warning, TEXT("Jumped down to Z: %f"), JumpZValue);
+		return;
 	}
-	else
+
+	if (!GetMovementComponent()->IsFalling())
 	{
-		// signal the character to jump
-		Jump();
+		if (JumpType == EJumpType::Set)
+		{
+			FVector Dest = GetActorLocation();
+			Dest.Z = JumpZValue;
+			TeleportTo(Dest, GetActorRotation());
+			UE_LOG(LogTemp, Warning, TEXT("Teleported to Z: %f"), JumpZValue);
+		}
+		else if (JumpType == EJumpType::Down)
+		{
+			LaunchCharacter(FVector(0, 0, -JumpZValue * 5), false, true);
+			UE_LOG(LogTemp, Warning, TEXT("Jumped down to Z: %f"), JumpZValue);
+		}
+		else
+		{
+			// signal the character to jump
+			Jump();
+		}
 	}
+
 }
 
 void ATP_ThirdPersonCharacter::DoJumpEnd()

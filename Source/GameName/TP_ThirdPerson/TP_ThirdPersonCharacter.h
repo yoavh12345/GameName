@@ -14,6 +14,14 @@ struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
+UENUM(BlueprintType)
+enum class EJumpType : uint8
+{
+	Jump,
+	Set,
+	Down
+};
+
 /**
  *  A simple player-controllable third person character
  *  Implements a controllable orbiting camera
@@ -55,10 +63,10 @@ public:
 	ATP_ThirdPersonCharacter();	
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Code Editing")
-	bool OverrideJumpToTeleport = false;
+	EJumpType JumpType = EJumpType::Jump;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Code Editing")
-	float TeleportZHeight = 0;
+	float JumpZValue = 0;
 
 protected:
 
