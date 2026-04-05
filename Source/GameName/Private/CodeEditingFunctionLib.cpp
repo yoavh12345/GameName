@@ -3,34 +3,7 @@
 
 #include "CodeEditingFunctionLib.h"
 #include "Kismet/GameplayStatics.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "GameName/TP_ThirdPerson/TP_ThirdPersonCharacter.h"
-
-FCodeParseResult UCodeEditingFunctionLib::HandleCodeChange(FString NewCodeLine, TSubclassOf<AActor> Context, ECodeEvent CE, UObject* WorldContextObject)
-{
-	FCodeParseResult Result;
-	TArray<FString> Expressions = GetExpressionsFromCode(NewCodeLine, Result.Errors);
-	TArray<FCodeAction> Actions;
-	for (FString Exp : Expressions)
-	{
-		Actions.Add(GetActionFromExpression(Exp, Result.Errors));
-	}
-	if (Result.Errors.Num() != 0)
-	{
-		return Result;
-	}
-
-	for (auto Action : Actions)
-	{
-		if (!doAction(Action, Context, WorldContextObject, CE))
-		{
-			Result.Errors.Add(ECodeSyntaxErrorType::InvalidAction);
-			Result.bSuccess = false;
-		}
-	}
-
-	return Result;
-}
 
 FCodeLineData UCodeEditingFunctionLib::ParseCodeLineData(FString OriginalCodeLine, TSubclassOf<AActor> Context, ECodeEvent CE)
 {
@@ -59,91 +32,169 @@ FString UCodeEditingFunctionLib::GetClassNameFromContext(TSubclassOf<AActor> Con
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Context is not soppurted!"));
+		UE_LOG(LogTemp, Error, TEXT("Context is not supported!"));
 		return FString();
 	}
 
 }
 
-FCodeAction UCodeEditingFunctionLib::GetActionFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errs)
+FCodeParseResult UCodeEditingFunctionLib::CompileRule(FString CodeLine, TSubclassOf<AActor> Context, ECodeEvent Event)
 {
-	FCodeAction retAction;
-	if (Expression.StartsWith("transform.z"))
+	FCodeParseResult ParseResult;
+	ParseResult.Errors = TArray<ECodeSyntaxErrorType>();
+	FCodeRule NewRule;
+	NewRule.ContextClass = Context;
+	NewRule.TriggerEvent = Event;
+	NewRule.Operations = TArray<FCodeOperation>();
+	TArray<FString> CodeLines;
+	CodeLine.ParseIntoArrayLines(CodeLines);
+	for (auto Line : CodeLines)
 	{
-		FString ValueStr = Expression.RightChop(FString("transform.z").Len() + 1);
-		UE_LOG(LogTemp, Warning, TEXT("Value Str: %s"), *ValueStr);
-		float Value = FCString::Atof(*ValueStr);
-		if (Value == 0 && FCString::Atof(*(ValueStr.RightChop(1))) != 0)
-		{
-			Value = FCString::Atof(*ValueStr.RightChop(1));
-		}
-		retAction.ActedOnField = EActedOnField::TransformZ;
-		retAction.ExpressionType = GetExpressionTypeFromExpression(Expression, Errs);
-		retAction.Value = Value;
+		FCodeOperation Operation = ParseOperation(Line, ParseResult.Errors);
+		NewRule.Operations.Add(Operation);
 	}
-	return retAction;
+	ParseResult.CompiledRule = NewRule;
+
+	ParseResult.bSuccess = ParseResult.Errors.Num() <= 0;
+	
+	return ParseResult;
 }
 
-TArray<FString> UCodeEditingFunctionLib::GetExpressionsFromCode(FString Code, TArray<ECodeSyntaxErrorType>& Errs)
+TArray<FString> UCodeEditingFunctionLib::TokenizeCode(FString Code)
 {
-	Code = Code.Replace(TEXT(" "), TEXT("")); // Remove spaces for easier parsing
-	Code = Code.ToLower();
-	TArray<FString> Expressions;
-	Code.ParseIntoArray(Expressions, TEXT("\n"));
-	return Expressions;
-}
+	TArray<FString> Tokens;
+	int32 i = 0;
 
-EExpressionType UCodeEditingFunctionLib::GetExpressionTypeFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errs)
-{
-		EExpressionType ret = Expression.Find(TEXT("+=")) != INDEX_NONE ? EExpressionType::Addition :
-		Expression.Find(TEXT("-=")) != INDEX_NONE ? EExpressionType::Subtraction :
-		Expression.Find(TEXT("=")) != INDEX_NONE ? EExpressionType::Set :
-		EExpressionType::Invalid;
-		if (ret == EExpressionType::Invalid)
+	while (i < Code.Len())
+	{
+		TCHAR C = Code[i];
+
+		// skip spaces
+		if (FChar::IsWhitespace(C))
 		{
-			Errs.Add(ECodeSyntaxErrorType::InvalidExpression);
+			++i;
+			continue;
 		}
-		return ret;
-}
 
-bool UCodeEditingFunctionLib::doAction(FCodeAction Action, TSubclassOf<AActor> Context, UObject* WorldContextObject, ECodeEvent CE)
-{
-	TArray<AActor*, FDefaultAllocator> OutObjects;
-	UGameplayStatics::GetAllActorsOfClass(WorldContextObject, Context, OutObjects);
-	if (OutObjects.Num() < 1)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("No Instances found of object!"));
-		return true;
-	}
-	for (auto Actor : OutObjects)
-	{
-		//player actions:
-		if (Context->IsChildOf(ATP_ThirdPersonCharacter::StaticClass()))
+		// operators
+		if (C == '+' || C == '-')
 		{
-			ATP_ThirdPersonCharacter* CastedActor = Cast<ATP_ThirdPersonCharacter>(Actor);
-			if (CE == ECodeEvent::OnJump)
+			if (i + 1 < Code.Len() && Code[i + 1] == '=')
 			{
-				if (Action.ActedOnField == EActedOnField::TransformZ)
-				{
-					if (Action.ExpressionType == EExpressionType::Set)
-					{
-						CastedActor->JumpZValue = Action.Value;
-						CastedActor->JumpType = EJumpType::Set;
-					}
-					else if (Action.ExpressionType == EExpressionType::Addition)
-					{
-						CastedActor->JumpType = EJumpType::Jump;
-						CastedActor->GetCharacterMovement()->JumpZVelocity = Action.Value;
-						UE_LOG(LogTemp, Warning, TEXT("Set JumpZVelocity for character: %s to %f"), *CastedActor->GetName(), Action.Value)
-					}
-					else if (Action.ExpressionType == EExpressionType::Subtraction)
-					{
-						CastedActor->JumpZValue = Action.Value;
-						CastedActor->JumpType = EJumpType::Down;
-					}
-				}
+				Tokens.Add(Code.Mid(i, 2));
+				i += 2;
+				continue;
 			}
 		}
+
+		if (C == '=')
+		{
+			Tokens.Add(TEXT("="));
+			++i;
+			continue;
+		}
+
+		// number literal (supports negative too if attached directly, like -500)
+		if (FChar::IsDigit(C) || C == '.'
+			|| (C == '-' && i + 1 < Code.Len() && (FChar::IsDigit(Code[i + 1]) || Code[i + 1] == '.')))
+		{
+			int32 Start = i;
+			++i;
+
+			while (i < Code.Len() && (FChar::IsDigit(Code[i]) || Code[i] == '.'))
+			{
+				++i;
+			}
+
+			Tokens.Add(Code.Mid(Start, i - Start));
+			continue;
+		}
+
+		// identifier / property name
+		int32 Start = i;
+		while (i < Code.Len())
+		{
+			TCHAR Current = Code[i];
+
+			bool bIsOperatorStart =
+				Current == '=' ||
+				Current == '+' ||
+				Current == '-' ||
+				FChar::IsWhitespace(Current);
+
+			if (bIsOperatorStart)
+			{
+				break;
+			}
+
+			++i;
+		}
+
+		Tokens.Add(Code.Mid(Start, i - Start));
 	}
-	return true;
+
+	return Tokens;
 }
+FCodeOperation UCodeEditingFunctionLib::ParseOperation(FString Expression, TArray<ECodeSyntaxErrorType>& Errors)
+{
+	FCodeOperation NewOperation;
+	TArray<FString> Tokenized = TokenizeCode(Expression);
+	if (Tokenized.Num() != 3)
+	{
+		Errors.Add(ECodeSyntaxErrorType::InvalidAction);
+		return NewOperation;
+	}
+	NewOperation.Property = GetPropertyFromExpression(Tokenized[0], Errors);
+	NewOperation.Verb = GetVerbFromExpression(Tokenized[1], Errors);
+	NewOperation.NumericValue = GetNumericValueFromExpression(Tokenized[2], Errors);
+	NewOperation.TargetType = ECodeTargetType::Self;
+
+	return NewOperation;
+}
+
+ECodeProperty UCodeEditingFunctionLib::GetPropertyFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errors)
+{
+	Expression = Expression.ToLower();
+	ECodeProperty ReturnProperty = ECodeProperty::Invalid;
+	if (Expression == "transform.z")
+		ReturnProperty = ECodeProperty::TransformZ;
+	else if (Expression == "transform.x")
+		ReturnProperty = ECodeProperty::TransformX;
+	else if (Expression == "transform.y")
+		ReturnProperty = ECodeProperty::TransformY;
+	
+
+	if (ReturnProperty == ECodeProperty::Invalid)
+		Errors.Add(ECodeSyntaxErrorType::UnsupportedProperty);
+
+	return ReturnProperty;
+}
+
+ECodeVerb UCodeEditingFunctionLib::GetVerbFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errors)
+{
+	ECodeVerb ReturnVerb = ECodeVerb::Invalid;
+	if (Expression == "=")
+		ReturnVerb = ECodeVerb::Set;
+	else if (Expression == "+=")
+		ReturnVerb = ECodeVerb::Add;
+	else if (Expression == "-=")
+		ReturnVerb = ECodeVerb::Subtract;
+
+	if (ReturnVerb == ECodeVerb::Invalid)
+	{
+		Errors.Add(ECodeSyntaxErrorType::UnsupportedVerb);
+	}
+	return ReturnVerb;
+}
+
+float UCodeEditingFunctionLib::GetNumericValueFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errors)
+{
+	TCHAR* EndPtr;
+	double Result = std::wcstod(*Expression, &EndPtr);
+
+	if (*EndPtr != '\0') {
+		Errors.Add(ECodeSyntaxErrorType::InvalidValue);
+	}
+	return Result;
+}
+

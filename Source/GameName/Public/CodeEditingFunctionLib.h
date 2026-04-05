@@ -20,54 +20,109 @@ struct FCodeLineData
 	FString UneditableLowerCode;
 };
 
-UENUM(BlueprintType)
-enum class EActedOnField : uint8
-{
-	TransformZ UMETA(DisplayName = "Transform Z"),
-	TransformX UMETA(DisplayName = "Transform X"),
-	TransformY UMETA(DisplayName = "Transform Y")
-};
-
-UENUM(BlueprintType)
-enum class EExpressionType : uint8
-{
-	Invalid UMETA(DisplayName = "Invalid"),
-	Addition UMETA(DisplayName = "Addition"),
-	Subtraction UMETA(DisplayName = "Subtraction"),
-	Set UMETA(DisplayName = "Set")
-};
-
-
-USTRUCT(BlueprintType)
-struct FCodeAction
-{
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Code Editing")
-	EActedOnField ActedOnField;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Code Editing")
-	EExpressionType ExpressionType;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Code Editing")
-	float Value;
-};
-
 
 UENUM(BlueprintType)
 enum class ECodeEvent : uint8
 {
-	OnJump UMETA(DisplayName = "On Jump"),
-	OnTakeDamage UMETA(DisplayName = "On Take Damage")
+	None            UMETA(DisplayName = "None"),
+	OnJump          UMETA(DisplayName = "On Jump"),
+	Constructor		UMETA(DisplayName = "Constructor")
+};
+
+UENUM(BlueprintType)
+enum class ECodeVerb : uint8
+{
+	Invalid         UMETA(DisplayName = "Invalid"),
+	Set             UMETA(DisplayName = "Set"),
+	Add             UMETA(DisplayName = "Add"),
+	Subtract        UMETA(DisplayName = "Subtract")
+};
+
+UENUM(BlueprintType)
+enum class ECodeProperty : uint8
+{
+	Invalid         UMETA(DisplayName = "Invalid"),
+	TransformX      UMETA(DisplayName = "Transform X"),
+	TransformY      UMETA(DisplayName = "Transform Y"),
+	TransformZ      UMETA(DisplayName = "Transform Z"),
+	Health          UMETA(DisplayName = "Health"),
+	JumpVelocity    UMETA(DisplayName = "Jump Velocity")
+};
+
+UENUM(BlueprintType)
+enum class ECodeTargetType : uint8
+{
+	Source          UMETA(DisplayName = "Source"),
+	OtherActor      UMETA(DisplayName = "Other Actor"),
+	AllOfContext    UMETA(DisplayName = "All Of Context"),
+	Self            UMETA(DisplayName = "Self")
 };
 
 UENUM(BlueprintType)
 enum class ECodeSyntaxErrorType : uint8
 {
-	InvalidExpression UMETA(DisplayName = "Invalid Expression"),
-	InvalidValue UMETA(DisplayName = "Invalid Value"),
-	UnsupportedField UMETA(DisplayName = "Unsupported Field"),
-	InvalidAction UMETA(DisplayName = "Invalid Action")
+	None                    UMETA(DisplayName = "None"),
+	InvalidExpression       UMETA(DisplayName = "Invalid Expression"),
+	InvalidValue            UMETA(DisplayName = "Invalid Value"),
+	UnsupportedProperty     UMETA(DisplayName = "Unsupported Property"),
+	UnsupportedVerb         UMETA(DisplayName = "Unsupported Verb"),
+	InvalidTarget           UMETA(DisplayName = "Invalid Target"),
+	InvalidEvent            UMETA(DisplayName = "Invalid Event"),
+	InvalidAction           UMETA(DisplayName = "Invalid Action"),
+	UnknownIdentifier       UMETA(DisplayName = "Unknown Identifier")
+};
+
+
+USTRUCT(BlueprintType)
+struct FCodeOperation
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	ECodeVerb Verb = ECodeVerb::Invalid;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	ECodeProperty Property = ECodeProperty::Invalid;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	ECodeTargetType TargetType = ECodeTargetType::Source;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float NumericValue = 0.f;
+};
+
+USTRUCT(BlueprintType)
+struct FCodeRule
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	ECodeEvent TriggerEvent = ECodeEvent::None;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TSubclassOf<AActor> ContextClass = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TArray<FCodeOperation> Operations;
+};
+
+
+USTRUCT(BlueprintType)
+struct FCodeEventPayload
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	AActor* SourceActor = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	AActor* OtherActor = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FVector WorldLocation = FVector::ZeroVector;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float NumericValue = 0.f;
 };
 
 USTRUCT(BlueprintType)
@@ -80,7 +135,12 @@ struct FCodeParseResult
 
 	UPROPERTY(BlueprintReadOnly)
 	TArray<ECodeSyntaxErrorType> Errors;
+
+	UPROPERTY(BlueprintReadOnly)
+	FCodeRule CompiledRule;
 };
+
+
 
 /**
  * 
@@ -92,19 +152,21 @@ class GAMENAME_API UCodeEditingFunctionLib : public UBlueprintFunctionLibrary
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "Code Editing")
-	static FCodeParseResult HandleCodeChange(FString NewCodeLine, TSubclassOf<AActor> Context, ECodeEvent CE, UObject* WorldContextObject);
-
-	UFUNCTION(BlueprintCallable, Category = "Code Editing")
 	static FCodeLineData ParseCodeLineData(FString OriginalCodeLine, TSubclassOf<AActor> Context, ECodeEvent CE);
 	
 	static FString GetClassNameFromContext(TSubclassOf<AActor> Context);
 
+	UFUNCTION(BlueprintCallable, Category = "Code Editing")
+	static FCodeParseResult CompileRule(FString CodeLine, TSubclassOf<AActor> Context, ECodeEvent Event);
 private:
-	static FCodeAction GetActionFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errs);
 
-	static TArray<FString> GetExpressionsFromCode(FString Code, TArray<ECodeSyntaxErrorType>& Errs);
+	static TArray<FString> TokenizeCode(FString Code);
 
-	static EExpressionType GetExpressionTypeFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errs);
+	static FCodeOperation ParseOperation(FString Expression, TArray<ECodeSyntaxErrorType>& Errors);
+
+	static ECodeProperty GetPropertyFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errors);
 	
-	static bool doAction(FCodeAction Action, TSubclassOf<AActor> Context, UObject* WorldContextObject, ECodeEvent CE);
+	static ECodeVerb GetVerbFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errors);
+
+	static float GetNumericValueFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errors);
 };

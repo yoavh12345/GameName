@@ -38,6 +38,9 @@ class ATP_ThirdPersonCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UCodeEventComponent* CodeEventComponent;
 	
 protected:
 
@@ -61,12 +64,6 @@ public:
 
 	/** Constructor */
 	ATP_ThirdPersonCharacter();	
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Code Editing")
-	EJumpType JumpType = EJumpType::Jump;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Code Editing")
-	float JumpZValue = 0;
 
 protected:
 

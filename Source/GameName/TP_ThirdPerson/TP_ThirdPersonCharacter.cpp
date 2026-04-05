@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "CoreMinimal.h"
+#include "CodeEventComponent.h"
 #include "TP_ThirdPerson.h"
 
 ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
@@ -49,6 +50,8 @@ ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+
+	CodeEventComponent = CreateDefaultSubobject<UCodeEventComponent>(TEXT("Code Event Component"));
 }
 
 void ATP_ThirdPersonCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -123,36 +126,11 @@ void ATP_ThirdPersonCharacter::DoLook(float Yaw, float Pitch)
 
 void ATP_ThirdPersonCharacter::DoJumpStart()
 {
-	if (JumpType == EJumpType::Down)
-	{
-		LaunchCharacter(FVector(0, 0, -JumpZValue * 5), false, true);
-		UE_LOG(LogTemp, Warning, TEXT("Jumped down to Z: %f"), JumpZValue);
-		return;
-	}
-
-	if (!GetMovementComponent()->IsFalling())
-	{
-		if (JumpType == EJumpType::Set)
-		{
-			FVector Dest = GetActorLocation();
-			Dest.Z = JumpZValue;
-			TeleportTo(Dest, GetActorRotation());
-			UE_LOG(LogTemp, Warning, TEXT("Teleported to Z: %f"), JumpZValue);
-		}
-		else if (JumpType == EJumpType::Down)
-		{
-			LaunchCharacter(FVector(0, 0, -JumpZValue * 5), false, true);
-			UE_LOG(LogTemp, Warning, TEXT("Jumped down to Z: %f"), JumpZValue);
-		}
-		else
-		{
-			// signal the character to jump
-			Jump();
-		}
-	}
-
+	FCodeEventPayload payload;
+	payload.SourceActor = this;
+	CodeEventComponent->RaiseEvent(ECodeEvent::OnJump, payload);
+	Jump();
 }
-
 void ATP_ThirdPersonCharacter::DoJumpEnd()
 {
 	// signal the character to stop jumping
