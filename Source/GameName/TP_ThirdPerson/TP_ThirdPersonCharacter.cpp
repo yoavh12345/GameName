@@ -12,6 +12,7 @@
 #include "InputActionValue.h"
 #include "CoreMinimal.h"
 #include "CodeEventComponent.h"
+#include "CodeRuleSubsystem.h"
 #include "TP_ThirdPerson.h"
 
 ATP_ThirdPersonCharacter::ATP_ThirdPersonCharacter()
@@ -126,10 +127,14 @@ void ATP_ThirdPersonCharacter::DoLook(float Yaw, float Pitch)
 
 void ATP_ThirdPersonCharacter::DoJumpStart()
 {
-	FCodeEventPayload payload;
-	payload.SourceActor = this;
-	CodeEventComponent->RaiseEvent(ECodeEvent::OnJump, payload);
-	Jump();
+	if (!GetMovementComponent()->IsFalling())
+	{
+		FCodeEventPayload payload;
+		payload.SourceActor = this;
+		CodeEventComponent->RaiseEvent(ECodeEvent::OnJump, payload);
+		if (!(CodeEventComponent->GetCodeSubsystem()->GetMatchingRules(ECodeEvent::OnJump, this).Num() > 0))
+			Jump();
+	}
 }
 void ATP_ThirdPersonCharacter::DoJumpEnd()
 {
