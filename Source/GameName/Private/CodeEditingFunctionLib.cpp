@@ -85,6 +85,11 @@ TArray<FString> UCodeEditingFunctionLib::TokenizeCode(FString Code)
 				i += 2;
 				continue;
 			}
+			else
+			{
+				++i;
+				continue;
+			}
 		}
 
 		if (C == '=')

@@ -7,6 +7,7 @@
 
 bool UCodeRuleSubsystem::RegisterRule(const FCodeRule& Rule)
 {
+	ClearRulesForContext(Rule.ContextClass, Rule.TriggerEvent);
 	CodeRules.Add(Rule);
 	return true;
 }
