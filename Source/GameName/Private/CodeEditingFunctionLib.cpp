@@ -167,6 +167,8 @@ ECodeProperty UCodeEditingFunctionLib::GetPropertyFromExpression(FString Express
 		ReturnProperty = ECodeProperty::TransformX;
 	else if (Expression == "transform.y")
 		ReturnProperty = ECodeProperty::TransformY;
+	else if (Expression == "health")
+		ReturnProperty = ECodeProperty::Health;
 	
 
 	if (ReturnProperty == ECodeProperty::Invalid)
