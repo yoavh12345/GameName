@@ -46,7 +46,8 @@ enum class ECodeProperty : uint8
 	TransformY      UMETA(DisplayName = "Transform Y"),
 	TransformZ      UMETA(DisplayName = "Transform Z"),
 	Health          UMETA(DisplayName = "Health"),
-	JumpVelocity    UMETA(DisplayName = "Jump Velocity")
+	JumpVelocity    UMETA(DisplayName = "Jump Velocity"),
+	Speed			UMETA(DisplayName = "Speed")
 };
 
 UENUM(BlueprintType)
@@ -169,4 +170,6 @@ private:
 	static ECodeVerb GetVerbFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errors);
 
 	static float GetNumericValueFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errors);
+	
+	static ECodeTargetType GetTargetTypeFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errors);
 };

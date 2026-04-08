@@ -65,6 +65,11 @@ TArray<FString> UCodeEditingFunctionLib::TokenizeCode(FString Code)
 	TArray<FString> Tokens;
 	int32 i = 0;
 
+	FString TargetType = Code.Left(Code.Find("."));
+	Code = Code.RightChop(Code.Find(".") + 1);
+	Tokens.Add(TargetType);
+	UE_LOG(LogTemp, Warning, TEXT("TargetType: %s, Remaining code: %s"), *TargetType, *Code);
+
 	while (i < Code.Len())
 	{
 		TCHAR C = Code[i];
@@ -144,15 +149,17 @@ FCodeOperation UCodeEditingFunctionLib::ParseOperation(FString Expression, TArra
 {
 	FCodeOperation NewOperation;
 	TArray<FString> Tokenized = TokenizeCode(Expression);
-	if (Tokenized.Num() != 3)
+	if (Tokenized.Num() != 4)
 	{
 		Errors.Add(ECodeSyntaxErrorType::InvalidAction);
 		return NewOperation;
 	}
-	NewOperation.Property = GetPropertyFromExpression(Tokenized[0], Errors);
-	NewOperation.Verb = GetVerbFromExpression(Tokenized[1], Errors);
-	NewOperation.NumericValue = GetNumericValueFromExpression(Tokenized[2], Errors);
-	NewOperation.TargetType = ECodeTargetType::Self;
+	UE_LOG(LogTemp, Warning, TEXT("Tokens: %s,  %s,  %s,  %s"), *Tokenized[0], *Tokenized[1], *Tokenized[2], *Tokenized[3])
+	NewOperation.TargetType = GetTargetTypeFromExpression(Tokenized[0], Errors);
+	NewOperation.Property = GetPropertyFromExpression(Tokenized[1], Errors);
+	NewOperation.Verb = GetVerbFromExpression(Tokenized[2], Errors);
+	NewOperation.NumericValue = GetNumericValueFromExpression(Tokenized[3], Errors);
+
 
 	return NewOperation;
 }
@@ -169,6 +176,10 @@ ECodeProperty UCodeEditingFunctionLib::GetPropertyFromExpression(FString Express
 		ReturnProperty = ECodeProperty::TransformY;
 	else if (Expression == "health")
 		ReturnProperty = ECodeProperty::Health;
+	else if (Expression == "speed")
+		ReturnProperty = ECodeProperty::Speed;
+	else if (Expression == "jumpvelocity")
+		ReturnProperty = ECodeProperty::JumpVelocity;
 	
 
 	if (ReturnProperty == ECodeProperty::Invalid)
@@ -203,5 +214,21 @@ float UCodeEditingFunctionLib::GetNumericValueFromExpression(FString Expression,
 		Errors.Add(ECodeSyntaxErrorType::InvalidValue);
 	}
 	return Result;
+}
+
+ECodeTargetType UCodeEditingFunctionLib::GetTargetTypeFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errors)
+{
+	ECodeTargetType ReturnVerb = ECodeTargetType::AllOfContext;
+	if (Expression == "all")
+		ReturnVerb = ECodeTargetType::AllOfContext;
+	if (Expression == "other")
+		ReturnVerb = ECodeTargetType::OtherActor;
+	else if (Expression == "self")
+		ReturnVerb = ECodeTargetType::Self;
+	else
+	{
+		Errors.Add(ECodeSyntaxErrorType::InvalidTarget);
+	}
+	return ReturnVerb;
 }
 
