@@ -3,6 +3,7 @@
 
 #include "HealthComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "CodeEventComponent.h"
 
 // Sets default values for this component's properties
 UHealthComponent::UHealthComponent()
@@ -35,8 +36,15 @@ void UHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	// ...
 }
 
-bool UHealthComponent::DoDamage(float DamageAmount)
+bool UHealthComponent::DoDamage(float DamageAmount, AActor* initiator)
 {
+	if (auto* codeEventComp = Cast<UCodeEventComponent>(GetOwner()->GetComponentByClass(UCodeEventComponent::StaticClass())))
+	{
+		FCodeEventPayload payload;
+		payload.OtherActor = initiator;
+		payload.SourceActor = GetOwner();
+		codeEventComp->RaiseEvent(ECodeEvent::OnHit, payload);
+	}
 	if (OnDamagedSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, OnDamagedSound, GetOwner()->GetActorLocation());

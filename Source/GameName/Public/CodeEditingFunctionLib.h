@@ -26,7 +26,8 @@ enum class ECodeEvent : uint8
 {
 	None            UMETA(DisplayName = "None"),
 	OnJump          UMETA(DisplayName = "On Jump"),
-	Constructor		UMETA(DisplayName = "Constructor")
+	Constructor		UMETA(DisplayName = "Constructor"),
+	OnHit			UMETA(DisplayName = "On Hit")
 };
 
 UENUM(BlueprintType)

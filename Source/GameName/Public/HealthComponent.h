@@ -44,7 +44,7 @@ public:
 
 	// returns did the character die
 	UFUNCTION(BlueprintCallable, Category = "Health")
-	bool DoDamage(float DamageAmount);
+	bool DoDamage(float DamageAmount, AActor* initiator);
 
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	void Heal(float HealAmount);
