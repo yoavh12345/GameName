@@ -41,7 +41,7 @@ bool UHealthComponent::DoDamage(float DamageAmount, AActor* initiator)
 	if (auto* codeEventComp = Cast<UCodeEventComponent>(GetOwner()->GetComponentByClass(UCodeEventComponent::StaticClass())))
 	{
 		FCodeEventPayload payload;
-		payload.OtherActor = initiator;
+		payload.OtherActor  = initiator;
 		payload.SourceActor = GetOwner();
 		codeEventComp->RaiseEvent(ECodeEvent::OnHit, payload);
 	}
