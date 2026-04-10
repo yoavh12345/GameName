@@ -73,38 +73,40 @@ TArray<FString> UCodeEditingFunctionLib::TokenizeCode(FString Code)
 	TArray<FString> Tokens;
 	int32 i = 0;
 
-	FString TargetType = Code.Left(Code.Find("."));
-	Code = Code.RightChop(Code.Find(".") + 1);
+	// Expect something like: self.transform.x = -500
+	int32 DotIndex = Code.Find(TEXT("."));
+	if (DotIndex == INDEX_NONE)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TokenizeCode: no target type found in code: %s"), *Code);
+		return Tokens;
+	}
+
+	FString TargetType = Code.Left(DotIndex);
+	Code = Code.RightChop(DotIndex + 1);
 	Tokens.Add(TargetType);
+
 	UE_LOG(LogTemp, Warning, TEXT("TargetType: %s, Remaining code: %s"), *TargetType, *Code);
 
 	while (i < Code.Len())
 	{
 		TCHAR C = Code[i];
 
-		// skip spaces
+		// Skip spaces
 		if (FChar::IsWhitespace(C))
 		{
 			++i;
 			continue;
 		}
 
-		// operators
-		if (C == '+' || C == '-')
+		// Operators: += and -=
+		if ((C == '+' || C == '-') && i + 1 < Code.Len() && Code[i + 1] == '=')
 		{
-			if (i + 1 < Code.Len() && Code[i + 1] == '=')
-			{
-				Tokens.Add(Code.Mid(i, 2));
-				i += 2;
-				continue;
-			}
-			else
-			{
-				++i;
-				continue;
-			}
+			Tokens.Add(Code.Mid(i, 2));
+			i += 2;
+			continue;
 		}
 
+		// Operator: =
 		if (C == '=')
 		{
 			Tokens.Add(TEXT("="));
@@ -112,9 +114,9 @@ TArray<FString> UCodeEditingFunctionLib::TokenizeCode(FString Code)
 			continue;
 		}
 
-		// number literal (supports negative too if attached directly, like -500)
-		if (FChar::IsDigit(C) || C == '.'
-			|| (C == '-' && i + 1 < Code.Len() && (FChar::IsDigit(Code[i + 1]) || Code[i + 1] == '.')))
+		// Number literal, including negatives like -500 or -12.5
+		if (FChar::IsDigit(C) || C == '.' ||
+			(C == '-' && i + 1 < Code.Len() && (FChar::IsDigit(Code[i + 1]) || Code[i + 1] == '.')))
 		{
 			int32 Start = i;
 			++i;
@@ -128,7 +130,7 @@ TArray<FString> UCodeEditingFunctionLib::TokenizeCode(FString Code)
 			continue;
 		}
 
-		// identifier / property name
+		// Identifier / property name
 		int32 Start = i;
 		while (i < Code.Len())
 		{
@@ -136,8 +138,8 @@ TArray<FString> UCodeEditingFunctionLib::TokenizeCode(FString Code)
 
 			bool bIsOperatorStart =
 				Current == '=' ||
-				Current == '+' ||
-				Current == '-' ||
+				(Current == '+' && i + 1 < Code.Len() && Code[i + 1] == '=') ||
+				(Current == '-' && i + 1 < Code.Len() && Code[i + 1] == '=') ||
 				FChar::IsWhitespace(Current);
 
 			if (bIsOperatorStart)
@@ -153,6 +155,8 @@ TArray<FString> UCodeEditingFunctionLib::TokenizeCode(FString Code)
 
 	return Tokens;
 }
+
+
 FCodeOperation UCodeEditingFunctionLib::ParseOperation(FString Expression, TArray<ECodeSyntaxErrorType>& Errors)
 {
 	FCodeOperation NewOperation;
