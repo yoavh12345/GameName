@@ -4,6 +4,7 @@
 #include "HealthComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "CodeEventComponent.h"
+#include "CodeRuleSubsystem.h"
 
 // Sets default values for this component's properties
 UHealthComponent::UHealthComponent()
@@ -44,28 +45,44 @@ bool UHealthComponent::DoDamage(float DamageAmount, AActor* initiator)
 		payload.OtherActor  = initiator;
 		payload.SourceActor = GetOwner();
 		codeEventComp->RaiseEvent(ECodeEvent::OnHit, payload);
+		if (!(codeEventComp->GetCodeSubsystem()->GetMatchingRules(ECodeEvent::OnHit, GetOwner()).Num() > 0))
+			SetHealth(FMath::Clamp(Health - DamageAmount, 0, MaxHealth));
 	}
-	if (OnDamagedSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, OnDamagedSound, GetOwner()->GetActorLocation());
-	}
-	this->Health = FMath::Clamp(Health - DamageAmount, 0, MaxHealth);
-	UE_LOG(LogTemp, Warning, TEXT("Taken damage: %f \ncurrent health: %f"), DamageAmount, Health);
-	if (Health <= 0)
-	{
-		Die();
-		return true;
+	else {
+		SetHealth(FMath::Clamp(Health - DamageAmount, 0, MaxHealth));
 	}
 	return false;
 }
 
 void UHealthComponent::Heal(float HealAmount)
 {
-	this->Health = FMath::Clamp(Health + HealAmount, 0, MaxHealth);
+	SetHealth(FMath::Clamp(Health + HealAmount, 0, MaxHealth));	
 	UE_LOG(LogTemp, Warning, TEXT("Healed by: %f \ncurrent health: %f"), HealAmount, Health);
-	if (OnHealedSound)
+
+}
+
+void UHealthComponent::SetHealth(float newHealth)
+{
+	if (newHealth < Health)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this, OnHealedSound, GetOwner()->GetActorLocation());
+		if (OnDamagedSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, OnDamagedSound, GetOwner()->GetActorLocation());
+		}
+	}
+	else if (newHealth > Health)
+	{
+		if (OnHealedSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, OnHealedSound, GetOwner()->GetActorLocation());
+		}
+	}
+	Health = newHealth;
+	
+	if (Health <= 0)
+	{
+		Die();
+		return;
 	}
 }
 

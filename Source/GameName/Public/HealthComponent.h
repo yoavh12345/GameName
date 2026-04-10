@@ -50,5 +50,8 @@ public:
 	void Heal(float HealAmount);
 
 	UFUNCTION(BlueprintCallable, Category = "Health")
+	void SetHealth(float newHealth);
+
+	UFUNCTION(BlueprintCallable, Category = "Health")
 	void Die();
 };

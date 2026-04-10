@@ -30,6 +30,14 @@ FString UCodeEditingFunctionLib::GetClassNameFromContext(TSubclassOf<AActor> Con
 	{
 		return "Player";
 	}
+	else if (Context->GetName().Contains("BP_LightSaber"))
+	{
+		return "Saber";
+	}
+	else if (Context->GetDefaultObject<AActor>()->ActorHasTag("Enemy"))
+	{
+		return "Enemy";
+	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("Context is not supported!"));
@@ -221,7 +229,7 @@ ECodeTargetType UCodeEditingFunctionLib::GetTargetTypeFromExpression(FString Exp
 	ECodeTargetType ReturnVerb = ECodeTargetType::AllOfContext;
 	if (Expression == "all")
 		ReturnVerb = ECodeTargetType::AllOfContext;
-	if (Expression == "other")
+	else if (Expression == "other")
 		ReturnVerb = ECodeTargetType::OtherActor;
 	else if (Expression == "self")
 		ReturnVerb = ECodeTargetType::Self;

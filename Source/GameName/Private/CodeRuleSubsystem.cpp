@@ -92,6 +92,7 @@ TArray<AActor*> UCodeRuleSubsystem::ResolveTargets(ECodeTargetType TargetType, c
 	TArray<AActor*> Targets;
 	if (TargetType == ECodeTargetType::AllOfContext)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Getting all actors of class: %s"), *Rule.ContextClass->GetName())
 		UGameplayStatics::GetAllActorsOfClass(this, Rule.ContextClass, Targets);
 	}
 	else if (TargetType == ECodeTargetType::Source && Payload.SourceActor)
