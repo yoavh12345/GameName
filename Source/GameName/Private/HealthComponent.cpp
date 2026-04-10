@@ -44,6 +44,7 @@ bool UHealthComponent::DoDamage(float DamageAmount, AActor* initiator)
 		FCodeEventPayload payload;
 		payload.OtherActor  = initiator;
 		payload.SourceActor = GetOwner();
+		payload.Initiator = GetOwner();
 		codeEventComp->RaiseEvent(ECodeEvent::OnHit, payload);
 		if (!(codeEventComp->GetCodeSubsystem()->GetMatchingRules(ECodeEvent::OnHit, GetOwner()).Num() > 0))
 			SetHealth(FMath::Clamp(Health - DamageAmount, 0, MaxHealth));
@@ -88,6 +89,7 @@ void UHealthComponent::SetHealth(float newHealth)
 
 void UHealthComponent::Die()
 {
+	OnDie.Broadcast();
 	if (OnDieSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, OnDieSound, GetOwner()->GetActorLocation());

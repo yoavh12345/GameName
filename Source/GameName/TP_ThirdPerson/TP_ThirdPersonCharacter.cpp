@@ -131,6 +131,7 @@ void ATP_ThirdPersonCharacter::DoJumpStart()
 	{
 		FCodeEventPayload payload;
 		payload.SourceActor = this;
+		payload.Initiator = this;
 		CodeEventComponent->RaiseEvent(ECodeEvent::OnJump, payload);
 		if (!(CodeEventComponent->GetCodeSubsystem()->GetMatchingRules(ECodeEvent::OnJump, this).Num() > 0))
 			Jump();

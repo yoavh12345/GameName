@@ -26,7 +26,7 @@ enum class ECodeEvent : uint8
 {
 	None            UMETA(DisplayName = "None"),
 	OnJump          UMETA(DisplayName = "On Jump"),
-	Constructor		UMETA(DisplayName = "Constructor"),
+	OnCodeChange		UMETA(DisplayName = "OnCodeChange"),
 	OnHit			UMETA(DisplayName = "On Hit")
 };
 
@@ -113,6 +113,9 @@ USTRUCT(BlueprintType)
 struct FCodeEventPayload
 {
 	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	AActor* Initiator = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	AActor* SourceActor = nullptr;

@@ -33,9 +33,10 @@ void UCodeRuleSubsystem::ClearRulesForContext(TSubclassOf<AActor> ContextClass, 
 
 void UCodeRuleSubsystem::RaiseCodeEvent(ECodeEvent Event, const FCodeEventPayload& Payload)
 {
-	TArray<FCodeRule> MatchingRules = GetMatchingRules(Event, Payload.SourceActor);
+	TArray<FCodeRule> MatchingRules = GetMatchingRules(Event, Payload.Initiator);
 	for (auto Rule : MatchingRules)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Executing Rule"));
 		ExecuteRule(Rule, Payload);
 	}
 }
@@ -48,14 +49,14 @@ void UCodeRuleSubsystem::ExecuteRule(const FCodeRule& Rule, const FCodeEventPayl
 	}
 }
 
-TArray<FCodeRule> UCodeRuleSubsystem::GetMatchingRules(ECodeEvent Event, AActor* SourceActor) const
+TArray<FCodeRule> UCodeRuleSubsystem::GetMatchingRules(ECodeEvent Event, AActor* InitializingActor) const
 {
 	TArray<FCodeRule> result;
 	for (auto& Rule : CodeRules)
 	{
-		if (SourceActor)
+		if (InitializingActor)
 		{
-			if (SourceActor->GetClass()->IsChildOf(Rule.ContextClass) && Rule.TriggerEvent == Event)
+			if (InitializingActor->GetClass()->IsChildOf(Rule.ContextClass) && Rule.TriggerEvent == Event)
 				result.Add(Rule);
 		}
 	}
@@ -65,6 +66,7 @@ TArray<FCodeRule> UCodeRuleSubsystem::GetMatchingRules(ECodeEvent Event, AActor*
 
 void UCodeRuleSubsystem::ExecuteOperation(const FCodeOperation& Operation, const FCodeEventPayload& Payload, const FCodeRule& Rule)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Executing operation operation") )
 	TArray<AActor*> Targets = ResolveTargets(Operation.TargetType, Rule, Payload);
 
 	for (auto Target : Targets)
@@ -78,6 +80,7 @@ void UCodeRuleSubsystem::ExecuteOperation(const FCodeOperation& Operation, const
 				UE_LOG(LogTemp, Warning, TEXT("Target does not have a Code Editable Component"))
 				return;
 			}
+			UE_LOG(LogTemp, Warning, TEXT("Applying code operation on: %s"), * Target->GetName())
 			CastedComp->ApplyOperation(Operation, Payload);
 		}
 		else

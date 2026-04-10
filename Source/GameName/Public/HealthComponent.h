@@ -6,6 +6,8 @@
 #include "Components/ActorComponent.h"
 #include "HealthComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDie);
+
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent), Blueprintable )
 class GAMENAME_API UHealthComponent : public UActorComponent
@@ -15,6 +17,9 @@ class GAMENAME_API UHealthComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UHealthComponent();
+
+	UPROPERTY(BlueprintAssignable)
+	FOnDie OnDie;
 
 protected:
 	// Called when the game starts
