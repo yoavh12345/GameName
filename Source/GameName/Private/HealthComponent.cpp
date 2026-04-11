@@ -70,12 +70,20 @@ void UHealthComponent::SetHealth(float newHealth)
 		{
 			UGameplayStatics::PlaySoundAtLocation(this, OnDamagedSound, GetOwner()->GetActorLocation());
 		}
+		if (OnDamageEffect)
+		{
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, OnDamageEffect, GetOwner()->GetActorLocation());
+		}
 	}
-	else if (newHealth > Health)
+	else if (newHealth > Health || newHealth == MaxHealth)
 	{
 		if (OnHealedSound)
 		{
 			UGameplayStatics::PlaySoundAtLocation(this, OnHealedSound, GetOwner()->GetActorLocation());
+		}
+		if (OnHealEffect)
+		{
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, OnHealEffect, GetOwner()->GetActorLocation());
 		}
 	}
 	Health = newHealth;

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "HealthComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDie);
@@ -46,6 +47,12 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Health")
 	float Health;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Health")
+	UNiagaraSystem* OnDamageEffect;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Health")
+	UNiagaraSystem* OnHealEffect;
 
 	// returns did the character die
 	UFUNCTION(BlueprintCallable, Category = "Health")
