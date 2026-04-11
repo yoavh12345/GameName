@@ -38,6 +38,10 @@ FString UCodeEditingFunctionLib::GetClassNameFromContext(TSubclassOf<AActor> Con
 	{
 		return "Enemy";
 	}
+	else if (Context->GetDefaultObject<AActor>()->ActorHasTag("Spikes"))
+	{
+		return "Spikes";
+	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("Context is not supported!"));

@@ -32,6 +32,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Code Editing")
 	void ExecuteRule(const FCodeRule& Rule, const FCodeEventPayload& Payload);
 
+	UFUNCTION(BlueprintCallable, Category = "Code Editing")
 	TArray<FCodeRule> GetMatchingRules(ECodeEvent Event, AActor* SourceActor) const;
 
 
