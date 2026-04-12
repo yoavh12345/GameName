@@ -75,7 +75,7 @@ void UHealthComponent::SetHealth(float newHealth)
 			UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, OnDamageEffect, GetOwner()->GetActorLocation());
 		}
 	}
-	else if (newHealth > Health || newHealth == MaxHealth)
+	else 
 	{
 		if (OnHealedSound)
 		{
