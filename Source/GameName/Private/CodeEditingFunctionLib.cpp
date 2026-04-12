@@ -248,3 +248,67 @@ ECodeTargetType UCodeEditingFunctionLib::GetTargetTypeFromExpression(FString Exp
 	return ReturnVerb;
 }
 
+bool UCodeEditingFunctionLib::IsTextChangeValid(const FString& Original, const FString& Current, int32 MaxEdits, int32& OutEditsLeft)
+{
+	FString ParsedOriginal = Original;
+	ParsedOriginal.RemoveSpacesInline();
+	ParsedOriginal = ParsedOriginal.ToLower();
+
+	FString ParsedCurrent = Current;
+	ParsedCurrent.RemoveSpacesInline();
+	ParsedCurrent = ParsedCurrent.ToLower();
+
+	int32 n = ParsedOriginal.Len();
+	int32 m = ParsedCurrent.Len();
+
+	// 1. Quick length check
+	if (FMath::Abs(n - m) > MaxEdits)
+	{
+		OutEditsLeft = MaxEdits - FMath::Abs(n - m);
+		return false;
+	}
+
+
+	int32 Edits = 0;
+	int32 i = 0; // Pointer for ParsedOriginal
+	int32 j = 0; // Pointer for ParsedCurrent
+
+	while (i < n && j < m)
+	{
+		if (ParsedOriginal[i] == ParsedCurrent[j])
+		{
+			i++;
+			j++;
+		}
+		else
+		{
+			Edits++;
+			if (Edits > MaxEdits)
+			{
+				OutEditsLeft = MaxEdits - Edits;
+				return false;
+			}
+
+			if (n == m) // Replacement
+			{
+				i++;
+				j++;
+			}
+			else if (n > m) // Deletion from ParsedOriginal
+			{
+				i++;
+			}
+			else // Insertion into ParsedCurrent
+			{
+				j++;
+			}
+		}
+	}
+
+	// Check for trailing characters
+	Edits += (n - i) + (m - j);
+
+	OutEditsLeft = MaxEdits - Edits;
+	return Edits <= MaxEdits;
+}
+

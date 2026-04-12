@@ -176,4 +176,7 @@ private:
 	static float GetNumericValueFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errors);
 	
 	static ECodeTargetType GetTargetTypeFromExpression(FString Expression, TArray<ECodeSyntaxErrorType>& Errors);
+
+	UFUNCTION(BlueprintPure, Category = "TextValidation")
+	static bool IsTextChangeValid(const FString& Original, const FString& Current, int32 MaxEdits, int32& OutEditsLeft);
 };
