@@ -68,6 +68,8 @@ void UCodeRuleSubsystem::ExecuteOperation(const FCodeOperation& Operation, const
 {
 	UE_LOG(LogTemp, Warning, TEXT("Executing operation operation") )
 	TArray<AActor*> Targets = ResolveTargets(Operation.TargetType, Rule, Payload);
+	if (Targets.Num() <= 0)
+		UE_LOG(LogTemp, Warning, TEXT("No matching targets found!"));
 
 	for (auto Target : Targets)
 	{
