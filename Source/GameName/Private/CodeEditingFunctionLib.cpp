@@ -250,65 +250,49 @@ ECodeTargetType UCodeEditingFunctionLib::GetTargetTypeFromExpression(FString Exp
 
 bool UCodeEditingFunctionLib::IsTextChangeValid(const FString& Original, const FString& Current, int32 MaxEdits, int32& OutEditsLeft)
 {
-	FString ParsedOriginal = Original;
-	ParsedOriginal.RemoveSpacesInline();
-	ParsedOriginal = ParsedOriginal.ToLower();
+	// 1. Cleanup
+	FString s1 = Original.Replace(TEXT(" "), TEXT("")).ToLower();
+	FString s2 = Current.Replace(TEXT(" "), TEXT("")).ToLower();
 
-	FString ParsedCurrent = Current;
-	ParsedCurrent.RemoveSpacesInline();
-	ParsedCurrent = ParsedCurrent.ToLower();
+	int32 n = s1.Len();
+	int32 m = s2.Len();
 
-	int32 n = ParsedOriginal.Len();
-	int32 m = ParsedCurrent.Len();
-
-	// 1. Quick length check
+	// 2. Quick length check
 	if (FMath::Abs(n - m) > MaxEdits)
 	{
 		OutEditsLeft = MaxEdits - FMath::Abs(n - m);
 		return false;
 	}
 
+	// 3. Levenshtein Distance (DP Table)
+	// We use two rows to save memory O(m)
+	TArray<int32> PrevRow;
+	TArray<int32> CurrRow;
+	PrevRow.SetNumUninitialized(m + 1);
+	CurrRow.SetNumUninitialized(m + 1);
 
-	int32 Edits = 0;
-	int32 i = 0; // Pointer for ParsedOriginal
-	int32 j = 0; // Pointer for ParsedCurrent
+	for (int32 j = 0; j <= m; j++) PrevRow[j] = j;
 
-	while (i < n && j < m)
+	for (int32 i = 1; i <= n; i++)
 	{
-		if (ParsedOriginal[i] == ParsedCurrent[j])
+		CurrRow[0] = i;
+		for (int32 j = 1; j <= m; j++)
 		{
-			i++;
-			j++;
-		}
-		else
-		{
-			Edits++;
-			if (Edits > MaxEdits)
-			{
-				OutEditsLeft = MaxEdits - Edits;
-				return false;
-			}
+			// If characters match, cost is 0, otherwise 1 (Substitution)
+			int32 Cost = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
 
-			if (n == m) // Replacement
-			{
-				i++;
-				j++;
-			}
-			else if (n > m) // Deletion from ParsedOriginal
-			{
-				i++;
-			}
-			else // Insertion into ParsedCurrent
-			{
-				j++;
-			}
+			CurrRow[j] = FMath::Min3(
+				CurrRow[j - 1] + 1,    // Insertion
+				PrevRow[j] + 1,        // Deletion
+				PrevRow[j - 1] + Cost  // Substitution
+			);
 		}
+		PrevRow = CurrRow;
 	}
 
-	// Check for trailing characters
-	Edits += (n - i) + (m - j);
+	int32 TotalEdits = PrevRow[m];
+	OutEditsLeft = MaxEdits - TotalEdits;
 
-	OutEditsLeft = MaxEdits - Edits;
-	return Edits <= MaxEdits;
+	return TotalEdits <= MaxEdits;
 }
 
