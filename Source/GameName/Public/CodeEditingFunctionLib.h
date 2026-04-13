@@ -83,7 +83,7 @@ struct FCodeOperation
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	ECodeVerb Verb = ECodeVerb::Invalid;
 
-	UPBROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	ECodeProperty Property = ECodeProperty::Invalid;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
