@@ -8,6 +8,8 @@
 #include "HealthComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDie);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float, NewHealth);
+
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent), Blueprintable )
@@ -21,6 +23,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnDie OnDie;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnHealthChanged OnHealthChanged;
 
 protected:
 	// Called when the game starts

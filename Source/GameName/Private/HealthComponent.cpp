@@ -87,6 +87,7 @@ void UHealthComponent::SetHealth(float newHealth)
 		}
 	}
 	Health = newHealth;
+	OnHealthChanged.Broadcast(Health);
 	
 	if (Health <= 0)
 	{
